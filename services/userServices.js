@@ -1,5 +1,6 @@
-const { users, carts } = require("../models");
+const { users } = require("../models");
 const jwt = require("jsonwebtoken");
+const { Op } = require('sequelize');
 const bcryptjs = require("bcryptjs");
 const {
   handleSearchOne,
@@ -17,7 +18,7 @@ module.exports = {
     try {
       const allUser = await handleSearchAll(users, { email });
 
-      handleError(allUser[0], "Email ja existe!");
+      handleError(allUser, "Email ja existe!");
 
       return await handleCreate(users, req.data);
     } catch (err) {
@@ -52,18 +53,24 @@ module.exports = {
     }
   },
 
-  index: async (req) => {
+  index: async (filter) => {
+    console.log(filter)
+
+    const { userLogin } = req.currentUser;
+    const { page, email } = filter;
+
     try {
       const userActive = await handleSearchOne(
         users,
-        req.currentUser.userLogin.id
+        userLogin.id
       );
 
-      if (!userActive.dataValues.is_admin) {
-        return handleSearchOne(users, req.currentUser.userLogin.id);
+      if (!userActive.is_admin) {
+        return handleSearchOne(users, userLogin.id);
       }
 
-      return handleSearchAll(users);
+      // return handleSearchAll(users);
+      return users.findAll({limit: 2, offset: page, where: email })
     } catch (err) {
       throw err;
     }

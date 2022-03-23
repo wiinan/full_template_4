@@ -1,7 +1,4 @@
 const userServices = require("../services/userServices");
-
-require("dotenv").config();
-
 class UserController {
   async store(req, res) {
     try {
@@ -15,7 +12,7 @@ class UserController {
 
   async login(req, res) {
     try {
-      const userLogin = await userServices.googleApp(req);
+      const userLogin = await userServices.login(req);
 
       return res.status(200).json({ "UserLogin": userLogin });
     } catch (err) {
@@ -24,9 +21,19 @@ class UserController {
   }
 
   async index(req, res) {
-    try {
-      const user = await userServices.index(req);
+    const { name, page } = req.query;
+    let email
 
+    const filter = ({ name, page })
+    
+    try {
+      if(name){
+        const likeName = `%${name}%`
+        filter.email = { email: {[Op.iLike]: likeName} }
+      }
+      console.log(filter)
+      const user = await userServices.index(filter);
+      
       return res.status(200).json(user);
     } catch (err) {
       res.status(500).json(err);

@@ -8,7 +8,7 @@ class handleUtils {
   };
 
   handleSearchOne = (model, filter) => {
-    return model.findByPk(filter);
+    return model.findByPk(filter, { raw: true });
   };
 
   handleSearchAdvanced = (model, logic, filter) => {
