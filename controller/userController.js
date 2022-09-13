@@ -2,7 +2,7 @@ const userServices = require("../services/userServices");
 class UserController {
   async store(req, res) {
     try {
-      const userRegistred = await userServices.store(req);
+      const userRegistred = await userServices.store(req.data);
 
       res.status(200).json(userRegistred);
     } catch (err) {
@@ -12,7 +12,7 @@ class UserController {
 
   async login(req, res) {
     try {
-      const userLogin = await userServices.login(req);
+      const userLogin = await userServices.login(req.data);
 
       return res.status(200).json({ "UserLogin": userLogin });
     } catch (err) {
@@ -22,18 +22,17 @@ class UserController {
 
   async index(req, res) {
     const { name, page } = req.query;
-    let email
 
     const filter = ({ name, page })
-    
+
     try {
       if(name){
         const likeName = `%${name}%`
         filter.email = { email: {[Op.iLike]: likeName} }
       }
-      console.log(filter)
+
       const user = await userServices.index(filter);
-      
+
       return res.status(200).json(user);
     } catch (err) {
       res.status(500).json(err);
@@ -41,8 +40,10 @@ class UserController {
   }
 
   async actualUser(req, res) {
+    const filter = req.currentUser.userLogin.id;
+
     try {
-      const user = await userServices.actualUser(req);
+      const user = await userServices.actualUser(filter);
 
       return res.status(200).json(user);
     } catch (err) {

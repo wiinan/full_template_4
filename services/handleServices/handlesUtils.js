@@ -4,8 +4,16 @@ class handleUtils {
   handleSearchAll = (model, filter) => {
     return model.findAll({
       where: { [Op.and]: [filter] },
+      raw: true
     });
   };
+
+  handleSearch = (model, filter) => {
+    return model.findOne({
+      where: filter,
+      raw: true
+    })
+  }
 
   handleSearchOne = (model, filter) => {
     return model.findByPk(filter, { raw: true });

@@ -27,7 +27,7 @@ module.exports = {
     }
   },
 
-  index: async (req) => {
+  index: () => {
     try {
       return handleSearchAll(images);
     } catch (err) {

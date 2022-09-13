@@ -6,7 +6,8 @@
       "host": "localhost",
       "port": "8080",
       "dialect": "postgres",
-      "logging": false
+      "logging": false,
+      "paranoid": true
     },
     "test": {
       "username": "root",

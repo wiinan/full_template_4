@@ -13,8 +13,10 @@ class cartController {
   }
 
   async index(req, res) {
+    const filter = req.currentUser.userLogin.id;
+
     try {
-      const allUserInfo = await cartServices.index(req);
+      const allUserInfo = await cartServices.index(filter);
       return res.status(200).json(allUserInfo);
     } catch (err) {
       res.status(500).json(err);

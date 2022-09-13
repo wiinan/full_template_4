@@ -1,6 +1,5 @@
 const { users } = require("../models");
 const jwt = require("jsonwebtoken");
-const { Op } = require('sequelize');
 const bcryptjs = require("bcryptjs");
 const {
   handleSearchOne,
@@ -9,37 +8,38 @@ const {
   handleDestroy,
   handleError,
   handleVerifyReturned,
+  handleSearch
 } = require("./handleServices/handlesUtils");
 
 module.exports = {
-  store: async (req) => {
-    const { email } = req.data;
+  store: async data => {
+    const { email } = data;
 
     try {
       const allUser = await handleSearchAll(users, { email });
 
-      handleError(allUser, "Email ja existe!");
+      handleError(allUser.length, "Email ja existe!");
 
-      return await handleCreate(users, req.data);
+      return await handleCreate(users, data);
     } catch (err) {
       throw err;
     }
   },
 
-  login: async (req) => {
-    const { email, password } = req.data;
+  login: async data => {
+    const { email, password } = data;
 
     try {
-      const sessionInitialized = await handleSearchAll(users, { email });
+      const sessionInitialized = await handleSearch(users, { email });
 
-      handleError(!sessionInitialized[0], "Usuario nao encontrado!");
+      handleError(!sessionInitialized, "Usuario nao encontrado!");
 
       const isValid = bcryptjs.compareSync(
         password,
-        sessionInitialized[0].dataValues.password
+        sessionInitialized.password
       );
 
-      const userLogin = sessionInitialized[0];
+      const userLogin = sessionInitialized;
 
       handleError(!isValid, "Senha invalida!");
 
@@ -53,9 +53,7 @@ module.exports = {
     }
   },
 
-  index: async (filter) => {
-    console.log(filter)
-
+  index: async filter => {
     const { userLogin } = req.currentUser;
     const { page, email } = filter;
 
@@ -69,24 +67,27 @@ module.exports = {
         return handleSearchOne(users, userLogin.id);
       }
 
-      // return handleSearchAll(users);
-      return users.findAll({limit: 2, offset: page, where: email })
+      if (!filter) {
+        return handleSearchAll(users);
+      }
+
+      return users.findAll({limit: 5, offset: page, where: email })
     } catch (err) {
       throw err;
     }
   },
 
-  actualUser: async (req) => {
+  actualUser: id => {
     try {
-      return await users.findOne({
-        where: { id: req.currentUser.userLogin.id },
+      return users.findOne({
+        where: { id },
       });
     } catch (err) {
       throw err;
     }
   },
 
-  update: async (req) => {
+  update: async req => {
     const { userLogin } = req.currentUser;
     const { password } = req.data;
 
@@ -97,7 +98,7 @@ module.exports = {
 
       const passValid = bcryptjs.compareSync(
         password,
-        sessionInitialized.dataValues.password
+        sessionInitialized.password
       );
 
       handleError(!passValid, "Senha Invalida");
