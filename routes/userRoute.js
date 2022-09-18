@@ -14,7 +14,6 @@ const routes = express.Router();
 
 routes.post("/signup", Validate(users.store), UserController.store);
 routes.post("/login", Validate(users.login), UserController.login);
-
 routes.get(
   "/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
@@ -24,20 +23,16 @@ routes.get(
   passport.authenticate("google", { failureRedirect: "/api/login" }),
   googleAuthController.store
 );
-
 routes.get("/google/users", googleAuthController.index);
-
 routes.post(
   "/google/local/:id",
   googleAuthController.loginGoogle
 );
-
 routes.get("/image", imgController.convertBase64);
 
 routes.use(verifyToken);
 
 routes.get("/google/user", googleAuthController.getUser);
-
 routes.get("/all", UserController.index);
 routes.get("/profile", UserController.actualUser);
 routes.put("/update/:id", Validate(users.update), UserController.update);
