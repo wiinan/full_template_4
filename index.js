@@ -7,7 +7,7 @@ const passport = require("passport");
 const session = require("express-session");
 require("dotenv").config();
 
-class App {
+module.exports = new (class App {
   constructor() {
     this.server = express();
 
@@ -44,6 +44,4 @@ class App {
   routes() {
     this.server.use(routes);
   }
-}
-
-module.exports = new App().server;
+})();

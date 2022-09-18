@@ -9,120 +9,121 @@ const {
   handleSearch,
 } = require("./handleServices/handlesUtils");
 
-module.exports = {
-  store: async (req) => {
-    const { userLogin } = req.currentUser;
-    const { id } = req.filter;
+const store = async (req) => {
+  const { userLogin } = req.currentUser;
+  const { id } = req.filter;
 
-    const isUser = await handleSearchOne(users, userLogin.id);
-    const product = await handleSearchOne(products, id);
-    const productInCart = await handleSearchAll(carts, {
-      products_id: id,
+  const isUser = await handleSearchOne(users, userLogin.id);
+  const product = await handleSearchOne(products, id);
+  const productInCart = await handleSearchAll(carts, {
+    products_id: id,
+    user_id: userLogin.id,
+  });
+  const diferentCheck = userLogin.id != product.dataValues.user_id;
+
+  handleEveryError(
+    [isUser, product, diferentCheck],
+    "Voce Não Pode fazer isso!"
+  );
+
+  if (!productInCart[0]) {
+    carts.create({
       user_id: userLogin.id,
+      products_id: id,
+      price: product.price,
+      where: { user_id: isUser.id },
     });
-    const diferentCheck = userLogin.id != product.dataValues.user_id;
+  }
 
-    handleEveryError(
-      [isUser, product, diferentCheck],
-      "Voce Não Pode fazer isso!"
-    );
+  const calcular =
+    parseFloat(productInCart[0].price) + parseFloat(product.price);
 
-    if (!productInCart[0]) {
-      carts.create({
-        user_id: userLogin.id,
-        products_id: id,
-        price: product.price,
-        where: { user_id: isUser.id },
-      });
-    }
+  return carts.update(
+    {
+      quantity: productInCart[0].quantity + 1,
+      price: calcular,
+    },
+    { where: { products_id: id } }
+  );
+};
 
-    const calcular =
-      parseFloat(productInCart[0].price) + parseFloat(product.price);
-
-    return carts.update(
+const index = (id) =>
+  carts.findAll({
+    where: { user_id: id },
+    include: [
       {
-        quantity: productInCart[0].quantity + 1,
-        price: calcular,
-      },
-      { where: { products_id: id } }
-    );
-  },
-
-  index: async (id) => {
-    return await carts.findAll({
-      where: { user_id: id },
-      include: [
-        {
-          model: products,
-          required: true,
-          attributes: {
-            exclude: ["created_at", "updated_at"],
-          },
-          include: [
-            {
-              model: images,
-              attributes: {
-                exclude: ["created_at", "updated_at"],
-              },
+        model: products,
+        required: true,
+        attributes: {
+          exclude: ["created_at", "updated_at"],
+        },
+        include: [
+          {
+            model: images,
+            attributes: {
+              exclude: ["created_at", "updated_at"],
             },
-          ],
-        },
-      ],
-    });
-  },
+          },
+        ],
+      },
+    ],
+  });
 
-  reducerProduct: async (req) => {
-    const { userLogin } = req.currentUser;
-    const { id } = req.filter;
-    const cartBody = req.data;
+const reducerProduct = async (req) => {
+  const { userLogin } = req.currentUser;
+  const { id } = req.filter;
+  const cartBody = req.data;
 
-    const isUser = await handleSearchOne(users, userLogin.id);
-    const product = await handleSearchOne(products, id);
-    const productInCart = await handleSearch(carts, {
-      products_id: id,
-      user_id: userLogin.id,
-    });
+  const isUser = await handleSearchOne(users, userLogin.id);
+  const product = await handleSearchOne(products, id);
+  const productInCart = await handleSearch(carts, {
+    products_id: id,
+    user_id: userLogin.id,
+  });
 
-    handleEveryError(
-      [isUser, cartBody, productInCart, product],
-      "Dados não Encontrados!"
-    );
+  handleEveryError(
+    [isUser, cartBody, productInCart, product],
+    "Dados não Encontrados!"
+  );
 
-    const quantityAtt = parseInt(productInCart.quantity) - 1;
+  const quantityAtt = parseInt(productInCart.quantity) - 1;
 
-    const priceAtt =
-      parseFloat(productInCart.dataValues.price) -
-      parseFloat(product.dataValues.price);
+  const priceAtt =
+    parseFloat(productInCart.dataValues.price) -
+    parseFloat(product.dataValues.price);
 
-    handleVerifyReturned(
-      productInCart.quantity === 1,
-      handleDestroy(carts, { products_id: id, user_id: userLogin.id })
-    );
+  handleVerifyReturned(
+    productInCart.quantity === 1,
+    handleDestroy(carts, { products_id: id, user_id: userLogin.id })
+  );
 
-    return await carts.update(
-      { price: priceAtt, quantity: quantityAtt },
-      {
-        where: {
-          id: cartBody.id,
-        },
-      }
-    );
-  },
-
-  RemoveProduct: async (req) => {
-    const { userLogin } = req.currentUser;
-    const { id } = req.filter;
-    const checkUser = await handleSearchOne(users, userLogin.id);
-    const product = await handleSearchOne(products, id);
-    try {
-      handleEveryError([checkUser, product], "Produto nao encontrado!");
-
-      return await handleDestroy(carts, {
-        products_id: id,
-        user_id: userLogin.id,
-      });
-    } catch (err) {
-      throw err;
+  return await carts.update(
+    { price: priceAtt, quantity: quantityAtt },
+    {
+      where: {
+        id: cartBody.id,
+      },
     }
-  },
+  );
+};
+
+const RemoveProduct = async (req) => {
+  const { userLogin } = req.currentUser;
+  const { id } = req.filter;
+  const checkUser = await handleSearchOne(users, userLogin.id);
+  const product = await handleSearchOne(products, id);
+
+  handleEveryError([checkUser, product], "Produto nao encontrado!");
+
+  return await handleDestroy(carts, {
+    products_id: id,
+    user_id: userLogin.id,
+  });
+};
+
+module.exports = {
+  store,
+  reducerProduct,
+  RemoveProduct,
+  index,
 };

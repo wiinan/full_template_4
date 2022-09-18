@@ -3,7 +3,7 @@ const specServices = require("../services/specServices");
 class typeController {
   async store(req, res) {
     try {
-      const cartAdded = await specServices.store(req);
+      const cartAdded = await specServices.store(req.data);
       return res.status(200).json(cartAdded);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -23,7 +23,7 @@ class typeController {
     try {
       await specServices.update(req);
 
-      return res.status(200).json({ "spec Atualizado": req.params });
+      return res.status(200).json({ "Marca Atualizado": req.params });
     } catch (err) {
       res.status(500).json(err);
     }
@@ -33,7 +33,7 @@ class typeController {
     try {
       await specServices.destroy(req);
 
-      return res.status(200).json({ "spec deletado": req.params });
+      return res.status(200).json({ "Marca deletado": req.params });
     } catch (err) {
       return res.status(500).json(err);
     }
