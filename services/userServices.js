@@ -11,92 +11,85 @@ const {
   handleSearch,
 } = require("./handleServices/handlesUtils");
 
-const store = async (data) => {
-  const { email } = data;
-  const allUser = await handleSearchAll(users, { email });
+module.exports =  new (class UserService {
+  async store (data) {
+    const { email } = data;
+    const allUser = await handleSearchAll(users, { email });
 
-  handleError(allUser.length, "Email ja existe!");
+    handleError(allUser.length, "Email ja existe!");
 
-  return await handleCreate(users, data);
-};
-
-const login = async (data) => {
-  const { email, password } = data;
-  const sessionInitialized = await handleSearch(users, { email });
-
-  handleError(!sessionInitialized, "Usuario nao encontrado!");
-
-  const isValid = bcryptjs.compareSync(password, sessionInitialized.password);
-  const userLogin = sessionInitialized;
-
-  handleError(!isValid, "Senha invalida!");
-
-  const userLogged = jwt.sign({ userLogin }, process.env.JWT_SECRET, {
-    expiresIn: "2d",
-  });
-
-  return { userLogged, sessionInitialized };
-};
-
-const index = async (filter) => {
-  const { userLogin } = req.currentUser;
-  const { page, email } = filter;
-
-  const userActive = await handleSearchOne(users, userLogin.id);
-
-  if (!userActive.is_admin) {
-    return handleSearchOne(users, userLogin.id);
+    return await handleCreate(users, data);
   }
 
-  if (!filter) {
-    return handleSearchAll(users);
+  async login (data) {
+    const { email, password } = data;
+    const sessionInitialized = await handleSearch(users, { email });
+
+    handleError(!sessionInitialized, "Usuario nao encontrado!");
+
+    const isValid = bcryptjs.compareSync(password, sessionInitialized.password);
+    const userLogin = sessionInitialized;
+
+    handleError(!isValid, "Senha invalida!");
+
+    const userLogged = jwt.sign({ userLogin }, process.env.JWT_SECRET, {
+      expiresIn: "2d",
+    });
+
+    return { userLogged, sessionInitialized };
   }
 
-  return users.findAll({ limit: 5, offset: page, where: email });
-};
+  async index (filter) {
+    const { userLogin } = req.currentUser;
+    const { page, email } = filter;
 
-const actualUser = (id) => {
-  return users.findOne({
-    where: { id },
-  });
-};
+    const userActive = await handleSearchOne(users, userLogin.id);
 
-const update = async (req) => {
-  const { userLogin } = req.currentUser;
-  const { password } = req.data;
-  const sessionInitialized = await handleSearchOne(users, userLogin.id);
+    if (!userActive.is_admin) {
+      return handleSearchOne(users, userLogin.id);
+    }
 
-  handleError(!sessionInitialized, "Usuario inexistente");
+    if (!filter) {
+      return handleSearchAll(users);
+    }
 
-  const passValid = bcryptjs.compareSync(password, sessionInitialized.password);
+    return users.findAll({ limit: 5, offset: page, where: email });
+  };
 
-  handleError(!passValid, "Senha Invalida");
+  async actualUser (id) {
+    return users.findOne({
+      where: { id },
+    });
+  };
 
-  await users.update({ ...req.data }, { where: { id: userLogin.id } });
+  async update (req) {
+    const { userLogin } = req.currentUser;
+    const { password } = req.data;
+    const sessionInitialized = await handleSearchOne(users, userLogin.id);
 
-  return { ...req };
-};
+    handleError(!sessionInitialized, "Usuario inexistente");
 
-const destroy = async (req) => {
-  const { userLogin } = req.currentUser;
-  const { id } = req.filter;
-  const userExist = await handleSearchOne(users, id);
+    const passValid = bcryptjs.compareSync(password, sessionInitialized.password);
 
-  handleError(!userExist, "Usuario inexistente");
+    handleError(!passValid, "Senha Invalida");
 
-  handleVerifyReturned(
-    !userLogin.isAdmin,
-    handleDestroy(users, { id: userLogin.id })
-  );
+    await users.update({ ...req.data }, { where: { id: userLogin.id } });
 
-  return await handleDestroy(users, { id });
-};
+    return { ...req };
+  };
 
-module.exports = {
-  store,
-  login,
-  index,
-  destroy,
-  update,
-  actualUser,
-};
+  async destroy (req) {
+    const { userLogin } = req.currentUser;
+    const { id } = req.filter;
+    const userExist = await handleSearchOne(users, id);
+
+    handleError(!userExist, "Usuario inexistente");
+
+    handleVerifyReturned(
+      !userLogin.isAdmin,
+      handleDestroy(users, { id: userLogin.id })
+    );
+
+    return await handleDestroy(users, { id });
+  };
+})();

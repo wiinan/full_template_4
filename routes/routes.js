@@ -8,19 +8,29 @@ const order = require("./orderRoute");
 const spec = require("./specRoute");
 const validator = require("./validatorRoute");
 const images = require("./imageRoutes");
-// const googleAuth = require("./googleAuthRoute");
+const googleAuth = require("./googleAuthRoute");
 
-const routes = express.Router();
+class IndexRoutes {
+    constructor () {
+        this.routes = express.Router();
 
-routes.use("/api", users);
-routes.use("/api", products);
-routes.use("/api", userinfo);
-routes.use("/api", payment);
-routes.use("/api", cart);
-routes.use("/api", order);
-routes.use("/api", spec);
-routes.use("/api", validator);
-routes.use("/api", images);
-// routes.use("/api", googleAuth);
+        this.users = new users()
+    }
 
-module.exports = routes;
+    setup () {
+        this.routes.use("/api", this.users.setup());
+        this.routes.use("/api", products);
+        this.routes.use("/api", userinfo);
+        this.routes.use("/api", payment);
+        this.routes.use("/api", cart);
+        this.routes.use("/api", order);
+        this.routes.use("/api", spec);
+        this.routes.use("/api", validator);
+        this.routes.use("/api", images);
+
+        return this.routes;
+    }
+}
+
+
+module.exports = new IndexRoutes();
